@@ -53,7 +53,9 @@ function compileModule (filename, options, callback) {
     return callback(err)
   }
 
-  if (!doc._id) {
+  if (options.id) {
+    doc._id = options.id;
+  } else if (!doc._id) {
     doc._id = idFromFilename(filename, '.js')
   }
 
@@ -77,7 +79,9 @@ function compileJSON (filename, options, callback) {
       return callback(err)
     }
 
-    if (!doc._id) {
+    if (options.id) {
+      doc._id = options.id;
+    } else if (!doc._id) {
       doc._id = idFromFilename(filename, '.json')
     }
 
@@ -168,7 +172,9 @@ function compileDirectory (dir, options, callback) {
         return callback(err)
       }
 
-      if (!doc._id) {
+      if (options.id) {
+        doc._id = options.id;
+      } else if (!doc._id) {
         doc._id = idFromFilename(dir)
       }
 
