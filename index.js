@@ -6,6 +6,7 @@ var path = require('path')
 var glob = require('glob')
 var mime = require('mime')
 var async = require('async')
+var stringify = require('json-stable-stringify')
 
 var RESERVED_DOCID_PREFIXES = ['_design', '_local']
 
@@ -148,6 +149,8 @@ function compileDirectory (dir, options, callback) {
             } catch (e) {
               err = e
             }
+          } else if(options.notrim) {
+            part[key] = data.toString()
           } else {
             part[key] = data.toString().trim()
           }
@@ -221,7 +224,17 @@ module.exports = function compile (source, options, callback) {
   options = options || {}
   options.index = 'index' in options ? options.index : false
 
-  if (typeof source === 'object') return callback(null, objToJson(source))
+  var wrappedCallback = callback;
+  if (options.stable) {
+    wrappedCallback = (err, doc) => {
+      if (doc) {
+        doc = JSON.parse(stringify(doc));
+	  }
+	  callback(err, doc);
+    }
+  }
+
+  if (typeof source === 'object') return wrappedCallback(null, objToJson(source))
 
   // resolve absolute path
   source = path.resolve(process.cwd(), source)
@@ -238,10 +251,10 @@ module.exports = function compile (source, options, callback) {
         }
 
         if (answer) {
-          return compileModule(source, options, callback)
+          return compileModule(source, options, wrappedCallback)
         }
 
-        compileDirectory(source, options, callback)
+        compileDirectory(source, options, wrappedCallback)
       })
     }
 
@@ -253,11 +266,11 @@ module.exports = function compile (source, options, callback) {
 
     switch (ext) {
       case '.js':
-        compileModule(source, options, callback)
+        compileModule(source, options, wrappedCallback)
         break
 
       case '.json':
-        compileJSON(source, options, callback)
+        compileJSON(source, options, wrappedCallback)
         break
 
       default:
